@@ -19,7 +19,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 email-validator
       
-      - run: python erdeven_weekly_csv_sender.py
+      - run: python erdeven_complete_scraper.py
         env:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
