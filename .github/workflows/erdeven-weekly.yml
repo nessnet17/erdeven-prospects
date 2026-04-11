@@ -19,7 +19,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 email-validator
       
-      - run: python erdeven_minimal.py
+      - run: bash erdeven.sh
         env:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
