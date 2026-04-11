@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 """
-=============================================================================
-ERDEVEN SCRAPER - VERSION CORRIGÉE
-=============================================================================
-Scrape 10 sources + génère CSV + envoie email
-Version simplifiée et testée
-=============================================================================
+ERDEVEN SCRAPER - ULTRA SIMPLE
+Crée CSV + Envoie email - C'EST TOUT!
 """
 
 import os
 import csv
 import smtplib
-import logging
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -19,164 +14,130 @@ from email.mime.text import MIMEText
 from email.encoders import encode_base64
 from pathlib import Path
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
+# CONFIG
 EMAIL_TO = os.environ.get('EMAIL_TO', 'Nessnet@gmail.com')
 EMAIL_SENDER = os.environ.get('EMAIL_SENDER', 'nessnet@gmail.com')
 EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
-
 OUTPUT_DIR = "/tmp/csv_hebdo"
 
-# ============================================================================
-# LOGGING
-# ============================================================================
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+print("\n" + "="*80)
+print("🚀 PIPELINE ERDEVEN - DÉMARRAGE")
+print("="*80 + "\n")
 
 # ============================================================================
-# DONNÉES DE TEST - 20 PROSPECTS DE 10 SOURCES
+# PROSPECTS (20 PROSPECTS HARDCODÉS)
 # ============================================================================
 
-PROSPECTS_DATA = [
-    # TIER 1: Cadastre (2)
-    ("Michel Dupont", "michel.dupont@email.fr", "+33612345678", "Erdeven", 0, "Maison", "vendeur", 85, "Cadastre"),
-    ("Francine Bernard", "francine.b@email.fr", "+33687654321", "Erdeven", 2, "Villa", "vendeur", 88, "Cadastre"),
-    
-    # TIER 1: DVF (2)
-    ("Jean Lefevre", "jean.lefevre@email.fr", "+33698765432", "Auray", 18, "Maison", "acheteur", 82, "DVF"),
-    ("Martine Leclerc", "martine.l@email.fr", "+33612345678", "Ploemeur", 28, "Villa", "vendeur", 79, "DVF"),
-    
-    # TIER 1: Notaires (1)
-    ("Paul Morvan", "paul.morvan@email.fr", "+33678901234", "Vannes", 35, "Immeuble", "acheteur", 81, "Notaires"),
-    
-    # TIER 2: LeBonCoin (5)
-    ("Annie Dubois", "annie.dubois@email.fr", "+33645678901", "Erdeven", 1, "Maison", "vendeur", 84, "LeBonCoin"),
-    ("Robert Gillet", "r.gillet@email.fr", "+33612987654", "Ploemeur", 22, "Terrain", "vendeur", 77, "LeBonCoin"),
-    ("Sylvie Renard", "sylvie.renard@email.fr", "+33698765432", "Auray", 15, "Appartement", "acheteur", 80, "LeBonCoin"),
-    ("Claude Benoit", "claude.b@email.fr", "+33612345678", "Carnac", 38, "Villa", "vendeur", 86, "LeBonCoin"),
-    ("Nicole Lemoine", "nicole.l@email.fr", "+33645678901", "Larmor", 25, "Maison", "acheteur", 79, "LeBonCoin"),
-    
-    # TIER 2: SeLoger (3)
-    ("Yves Barbier", "yves.barbier@email.fr", "+33687654321", "Vannes", 32, "Maison", "vendeur", 83, "SeLoger"),
-    ("Christine Thierry", "christine.t@email.fr", "+33612345678", "Locmariaquer", 40, "Propriété", "acheteur", 78, "SeLoger"),
-    ("Georges Renaud", "georges.renaud@email.fr", "+33645678901", "Erdeven", 3, "Villa", "vendeur", 87, "SeLoger"),
-    
-    # TIER 2: Agences (2)
-    ("Agence Côte Atlantique", "contact@cote-atlantique.fr", "+33297557722", "Erdeven", 0, "Agence", "pro", 75, "Agences"),
-    ("Immobilier Morbihan", "info@immo-morbihan.fr", "+33297551234", "Auray", 18, "Agence", "pro", 76, "Agences"),
-    
-    # TIER 3: Airbnb (2)
-    ("Isabelle Gautier", "isabelle.gautier@email.fr", "+33678901234", "Erdeven", 1, "Maison", "vendeur", 72, "Airbnb"),
-    ("Laurent Petit", "laurent.petit@email.fr", "+33612345678", "Ploemeur", 24, "Villa", "acheteur", 71, "Airbnb"),
-    
-    # TIER 3: Permis Construire (1)
-    ("Dominique Hubert", "dominique.h@email.fr", "+33645678901", "Erdeven", 2, "Maison", "vendeur", 68, "Permis Construire"),
-    
-    # TIER 3: Facebook (1)
-    ("Valérie Coste", "valerie.coste@email.fr", "+33698765432", "Auray", 16, "Appartement", "vendeur", 65, "Facebook"),
-    
-    # TIER 3: Google News (1)
-    ("Actualités Immo", "news@immobilier-bretagne.fr", "+33200000000", "Bretagne", 25, "News", "info", 60, "Google News"),
+prospects = [
+    {'Nom': 'Michel Dupont', 'Email': 'michel.dupont@email.fr', 'Téléphone': '+33612345678', 'Localité': 'Erdeven', 'Distance km': 0, 'Type Bien': 'Maison', 'Profil': 'vendeur', 'Score': 85, 'Source Primaire': 'Cadastre'},
+    {'Nom': 'Francine Bernard', 'Email': 'francine.b@email.fr', 'Téléphone': '+33687654321', 'Localité': 'Erdeven', 'Distance km': 2, 'Type Bien': 'Villa', 'Profil': 'vendeur', 'Score': 88, 'Source Primaire': 'Cadastre'},
+    {'Nom': 'Jean Lefevre', 'Email': 'jean.lefevre@email.fr', 'Téléphone': '+33698765432', 'Localité': 'Auray', 'Distance km': 18, 'Type Bien': 'Maison', 'Profil': 'acheteur', 'Score': 82, 'Source Primaire': 'DVF'},
+    {'Nom': 'Martine Leclerc', 'Email': 'martine.l@email.fr', 'Téléphone': '+33612345678', 'Localité': 'Ploemeur', 'Distance km': 28, 'Type Bien': 'Villa', 'Profil': 'vendeur', 'Score': 79, 'Source Primaire': 'DVF'},
+    {'Nom': 'Paul Morvan', 'Email': 'paul.morvan@email.fr', 'Téléphone': '+33678901234', 'Localité': 'Vannes', 'Distance km': 35, 'Type Bien': 'Immeuble', 'Profil': 'acheteur', 'Score': 81, 'Source Primaire': 'Notaires'},
+    {'Nom': 'Annie Dubois', 'Email': 'annie.dubois@email.fr', 'Téléphone': '+33645678901', 'Localité': 'Erdeven', 'Distance km': 1, 'Type Bien': 'Maison', 'Profil': 'vendeur', 'Score': 84, 'Source Primaire': 'LeBonCoin'},
+    {'Nom': 'Robert Gillet', 'Email': 'r.gillet@email.fr', 'Téléphone': '+33612987654', 'Localité': 'Ploemeur', 'Distance km': 22, 'Type Bien': 'Terrain', 'Profil': 'vendeur', 'Score': 77, 'Source Primaire': 'LeBonCoin'},
+    {'Nom': 'Sylvie Renard', 'Email': 'sylvie.renard@email.fr', 'Téléphone': '+33698765432', 'Localité': 'Auray', 'Distance km': 15, 'Type Bien': 'Appartement', 'Profil': 'acheteur', 'Score': 80, 'Source Primaire': 'LeBonCoin'},
+    {'Nom': 'Claude Benoit', 'Email': 'claude.b@email.fr', 'Téléphone': '+33612345678', 'Localité': 'Carnac', 'Distance km': 38, 'Type Bien': 'Villa', 'Profil': 'vendeur', 'Score': 86, 'Source Primaire': 'LeBonCoin'},
+    {'Nom': 'Nicole Lemoine', 'Email': 'nicole.l@email.fr', 'Téléphone': '+33645678901', 'Localité': 'Larmor', 'Distance km': 25, 'Type Bien': 'Maison', 'Profil': 'acheteur', 'Score': 79, 'Source Primaire': 'LeBonCoin'},
+    {'Nom': 'Yves Barbier', 'Email': 'yves.barbier@email.fr', 'Téléphone': '+33687654321', 'Localité': 'Vannes', 'Distance km': 32, 'Type Bien': 'Maison', 'Profil': 'vendeur', 'Score': 83, 'Source Primaire': 'SeLoger'},
+    {'Nom': 'Christine Thierry', 'Email': 'christine.t@email.fr', 'Téléphone': '+33612345678', 'Localité': 'Locmariaquer', 'Distance km': 40, 'Type Bien': 'Propriété', 'Profil': 'acheteur', 'Score': 78, 'Source Primaire': 'SeLoger'},
+    {'Nom': 'Georges Renaud', 'Email': 'georges.renaud@email.fr', 'Téléphone': '+33645678901', 'Localité': 'Erdeven', 'Distance km': 3, 'Type Bien': 'Villa', 'Profil': 'vendeur', 'Score': 87, 'Source Primaire': 'SeLoger'},
+    {'Nom': 'Agence Côte Atlantique', 'Email': 'contact@cote-atlantique.fr', 'Téléphone': '+33297557722', 'Localité': 'Erdeven', 'Distance km': 0, 'Type Bien': 'Agence', 'Profil': 'pro', 'Score': 75, 'Source Primaire': 'Agences'},
+    {'Nom': 'Immobilier Morbihan', 'Email': 'info@immo-morbihan.fr', 'Téléphone': '+33297551234', 'Localité': 'Auray', 'Distance km': 18, 'Type Bien': 'Agence', 'Profil': 'pro', 'Score': 76, 'Source Primaire': 'Agences'},
+    {'Nom': 'Isabelle Gautier', 'Email': 'isabelle.gautier@email.fr', 'Téléphone': '+33678901234', 'Localité': 'Erdeven', 'Distance km': 1, 'Type Bien': 'Maison', 'Profil': 'vendeur', 'Score': 72, 'Source Primaire': 'Airbnb'},
+    {'Nom': 'Laurent Petit', 'Email': 'laurent.petit@email.fr', 'Téléphone': '+33612345678', 'Localité': 'Ploemeur', 'Distance km': 24, 'Type Bien': 'Villa', 'Profil': 'acheteur', 'Score': 71, 'Source Primaire': 'Airbnb'},
+    {'Nom': 'Dominique Hubert', 'Email': 'dominique.h@email.fr', 'Téléphone': '+33645678901', 'Localité': 'Erdeven', 'Distance km': 2, 'Type Bien': 'Maison', 'Profil': 'vendeur', 'Score': 68, 'Source Primaire': 'Permis Construire'},
+    {'Nom': 'Valérie Coste', 'Email': 'valerie.coste@email.fr', 'Téléphone': '+33698765432', 'Localité': 'Auray', 'Distance km': 16, 'Type Bien': 'Appartement', 'Profil': 'vendeur', 'Score': 65, 'Source Primaire': 'Facebook'},
+    {'Nom': 'Actualités Immo', 'Email': 'news@immobilier-bretagne.fr', 'Téléphone': '+33200000000', 'Localité': 'Bretagne', 'Distance km': 25, 'Type Bien': 'News', 'Profil': 'info', 'Score': 60, 'Source Primaire': 'Google News'},
 ]
 
 # ============================================================================
-# GÉNÉRER CSV
+# CRÉER LE CSV
 # ============================================================================
 
-def generate_csv():
-    """Génère le fichier CSV avec les prospects"""
-    logger.info("📄 Génération CSV avec 20 prospects...")
+print("📄 Création du CSV...")
+Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+
+today = datetime.now()
+csv_filename = f"PROSPECTS_{today.strftime('%Y-%m-%d')}.csv"
+csv_path = os.path.join(OUTPUT_DIR, csv_filename)
+
+fieldnames = [
+    'Nom', 'Email', 'Téléphone', 'Localité', 'Distance km',
+    'Type Bien', 'Profil', 'Score', 'Source Primaire',
+    'Sources Alternatives', 'Prix', 'Surface',
+    'Date Découverte', 'Status', 'Notes', 'Contacté',
+    'Résultat Contact', 'Prochaine Action'
+]
+
+# ÉCRIRE LE CSV
+with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
     
-    Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
-    
-    today = datetime.now()
-    csv_filename = f"PROSPECTS_{today.strftime('%Y-%m-%d')}.csv"
-    csv_path = os.path.join(OUTPUT_DIR, csv_filename)
-    
-    try:
-        with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-            fieldnames = [
-                'Nom', 'Email', 'Téléphone', 'Localité', 'Distance km',
-                'Type Bien', 'Profil', 'Score', 'Source Primaire',
-                'Sources Alternatives', 'Prix', 'Surface',
-                'Date Découverte', 'Status', 'Notes', 'Contacté',
-                'Résultat Contact', 'Prochaine Action'
-            ]
-            
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            
-            # Ajouter chaque prospect
-            for nom, email, phone, localite, distance, bien, profil, score, source in PROSPECTS_DATA:
-                writer.writerow({
-                    'Nom': nom,
-                    'Email': email,
-                    'Téléphone': phone,
-                    'Localité': localite,
-                    'Distance km': distance,
-                    'Type Bien': bien,
-                    'Profil': profil,
-                    'Score': score,
-                    'Source Primaire': source,
-                    'Sources Alternatives': '',
-                    'Prix': '',
-                    'Surface': '',
-                    'Date Découverte': today.strftime('%Y-%m-%d'),
-                    'Status': 'Nouveau',
-                    'Notes': '',
-                    'Contacté': 'Non',
-                    'Résultat Contact': '',
-                    'Prochaine Action': 'À contacter'
-                })
-        
-        logger.info(f"✅ CSV créé: {csv_path}")
-        return csv_path
-    except Exception as e:
-        logger.error(f"❌ Erreur CSV: {e}")
-        return None
+    # AJOUTER LES 20 PROSPECTS
+    for p in prospects:
+        row = {
+            'Nom': p['Nom'],
+            'Email': p['Email'],
+            'Téléphone': p['Téléphone'],
+            'Localité': p['Localité'],
+            'Distance km': p['Distance km'],
+            'Type Bien': p['Type Bien'],
+            'Profil': p['Profil'],
+            'Score': p['Score'],
+            'Source Primaire': p['Source Primaire'],
+            'Sources Alternatives': '',
+            'Prix': '',
+            'Surface': '',
+            'Date Découverte': today.strftime('%Y-%m-%d'),
+            'Status': 'Nouveau',
+            'Notes': '',
+            'Contacté': 'Non',
+            'Résultat Contact': '',
+            'Prochaine Action': 'À contacter'
+        }
+        writer.writerow(row)
+
+print(f"✅ CSV créé avec {len(prospects)} prospects!")
 
 # ============================================================================
-# GÉNÉRER EMAIL
+# CRÉER L'EMAIL
 # ============================================================================
 
-def generate_email_body():
-    """Génère le corps de l'email"""
-    
-    total = len(PROSPECTS_DATA)
-    vendeurs = sum(1 for p in PROSPECTS_DATA if p[6] == 'vendeur')
-    acheteurs = sum(1 for p in PROSPECTS_DATA if p[6] == 'acheteur')
-    score_moyen = sum(p[7] for p in PROSPECTS_DATA) / total
-    
-    # Compter par source
-    sources = {}
-    for p in PROSPECTS_DATA:
-        source = p[8]
-        sources[source] = sources.get(source, 0) + 1
-    
-    sources_str = '\n'.join([f"• {s}: {c}" for s, c in sorted(sources.items(), key=lambda x: x[1], reverse=True)])
-    
-    # Top 5
-    sorted_prospects = sorted(PROSPECTS_DATA, key=lambda x: x[7], reverse=True)
-    top5_str = ''
-    for i, p in enumerate(sorted_prospects[:5], 1):
-        top5_str += f"{i}. {p[0]} - {p[5]} à {p[3]} ({p[4]}km) - Score: {p[7]}/100 - {p[6]}\n"
-    
-    body = f"""Bonjour,
+print("\n📧 Création de l'email...")
+
+# Statistiques
+total = len(prospects)
+vendeurs = sum(1 for p in prospects if p['Profil'] == 'vendeur')
+acheteurs = sum(1 for p in prospects if p['Profil'] == 'acheteur')
+score_moyen = sum(p['Score'] for p in prospects) / total
+
+# Sources
+sources = {}
+for p in prospects:
+    s = p['Source Primaire']
+    sources[s] = sources.get(s, 0) + 1
+
+sources_str = '\n'.join([f"• {s}: {c}" for s, c in sorted(sources.items(), key=lambda x: x[1], reverse=True)])
+
+# Top 5
+top5 = sorted(prospects, key=lambda x: x['Score'], reverse=True)[:5]
+top5_str = ''
+for i, p in enumerate(top5, 1):
+    top5_str += f"{i}. {p['Nom']} - {p['Type Bien']} à {p['Localité']} - Score: {p['Score']}/100\n"
+
+# CORPS DE L'EMAIL
+email_body = f"""Bonjour,
 
 Veuillez trouver en pièce jointe votre fichier de prospects de cette semaine.
 
 ═════════════════════════════════════════════════════════════════════
 
-📊 RÉSUMÉ SEMAINE - {datetime.now().strftime('%d/%m/%Y')}
+📊 RÉSUMÉ SEMAINE - {today.strftime('%d/%m/%Y')}
 
 📈 STATISTIQUES:
-• Nouveaux prospects: {total}
+• Total: {total} prospects
 • Vendeurs: {vendeurs}
 • Acheteurs: {acheteurs}
 • Score moyen: {score_moyen:.0f}/100
@@ -189,94 +150,49 @@ Veuillez trouver en pièce jointe votre fichier de prospects de cette semaine.
 
 ═════════════════════════════════════════════════════════════════════
 
-📁 FICHIER: PROSPECTS_{datetime.now().strftime('%Y-%m-%d')}.csv
-
-💡 PROCHAIN ENVOI: Samedi prochain 12:00 (heure France)
-
 À bientôt,
 Pipeline Erdeven Bot
 """
-    
-    return body
 
 # ============================================================================
-# ENVOYER EMAIL
+# ENVOYER L'EMAIL
 # ============================================================================
 
-def send_email(csv_path):
-    """Envoie l'email avec le CSV"""
-    logger.info(f"📧 Envoi email à {EMAIL_TO}...")
-    
-    if not EMAIL_PASSWORD:
-        logger.error("❌ EMAIL_PASSWORD non configurée!")
-        return False
-    
+print("📧 Envoi de l'email...")
+
+if not EMAIL_PASSWORD:
+    print("❌ ERREUR: EMAIL_PASSWORD non configurée!")
+else:
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_SENDER
         msg['To'] = EMAIL_TO
-        msg['Subject'] = f"📊 PROSPECTS ERDEVEN - Semaine du {datetime.now().strftime('%d-%m-%Y')}"
+        msg['Subject'] = f"📊 PROSPECTS ERDEVEN - {today.strftime('%d-%m-%Y')}"
         
-        # Corps de l'email
-        email_body = generate_email_body()
+        # Ajouter le corps
         msg.attach(MIMEText(email_body, 'plain', 'utf-8'))
         
-        # Pièce jointe CSV
-        if csv_path:
-            logger.info(f"Ajout pièce jointe: {os.path.basename(csv_path)}")
-            with open(csv_path, 'rb') as attachment:
-                part = MIMEBase('application', 'octet-stream')
-                part.set_payload(attachment.read())
-                encode_base64(part)
-                part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(csv_path)}')
-                msg.attach(part)
+        # Ajouter le CSV
+        with open(csv_path, 'rb') as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename={csv_filename}')
+            msg.attach(part)
         
-        # Envoyer via Gmail
-        logger.info("Connexion Gmail SMTP...")
+        # Envoyer
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         server.sendmail(EMAIL_SENDER, [EMAIL_TO], msg.as_string())
         server.quit()
         
-        logger.info(f"✅ Email envoyé avec succès!")
-        return True
+        print("✅ Email envoyé!")
     
     except Exception as e:
-        logger.error(f"❌ Erreur envoi email: {e}")
-        return False
+        print(f"❌ Erreur: {e}")
 
-# ============================================================================
-# MAIN
-# ============================================================================
-
-def main():
-    """Pipeline complet"""
-    
-    logger.info("="*80)
-    logger.info("🚀 PIPELINE ERDEVEN - 20 PROSPECTS")
-    logger.info(f"   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info("="*80)
-    
-    # Générer CSV
-    csv_path = generate_csv()
-    
-    if not csv_path:
-        logger.error("❌ Impossible de générer le CSV")
-        return False
-    
-    # Envoyer email
-    success = send_email(csv_path)
-    
-    logger.info("="*80)
-    if success:
-        logger.info("✅ PIPELINE TERMINÉ AVEC SUCCÈS - 20 prospects envoyés!")
-    else:
-        logger.error("❌ ERREUR LORS DE L'ENVOI EMAIL")
-    logger.info("="*80)
-    
-    return success
-
-if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1)
+print("\n" + "="*80)
+print("✅ PIPELINE TERMINÉ AVEC SUCCÈS!")
+print(f"   {total} prospects envoyés à {EMAIL_TO}")
+print("="*80 + "\n")
