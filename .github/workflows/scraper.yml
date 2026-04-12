@@ -6,15 +6,14 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    env:
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
       - run: pip install requests beautifulsoup4
       - run: python prospect_scraper.py
-        env:
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          
