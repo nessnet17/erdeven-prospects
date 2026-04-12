@@ -1,28 +1,8 @@
-name: Scraper
-
+name: Test
 on:
-  schedule:
-    - cron: '0 11 * * SAT'
   workflow_dispatch:
-
 jobs:
-  scraper_job:
+  test:
     runs-on: ubuntu-latest
-
-    env:
-      EMAIL_TO: ${{ secrets.EMAIL_TO }}
-      EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-
     steps:
-      - run: echo "Workflow started"
-
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - run: pip install requests beautifulsoup4
-
-      - run: python prospect_scraper.py
+      - run: echo "It works"
