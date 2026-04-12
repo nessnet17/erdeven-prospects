@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-import os,smtplib
+import os, smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
-from email.encoders import encode_base64
+from email import encoders
+from datetime import date
 
-os.makedirs('/tmp/csv_hebdo',exist_ok=True)
-f=open('/tmp/csv_hebdo/PROSPECTS_2026-04-11.csv','w')
+today = date.today().strftime('%Y-%m-%d')
+csv_path = f'/tmp/csv_hebdo/PROSPECTS_{today}.csv'
+
+os.makedirs('/tmp/csv_hebdo', exist_ok=True)
+f = open(csv_path, 'w')
 f.write('Nom,Email,Telephone,Localite,Distance km,Type Bien,Profil,Score,Source Primaire,Sources Alternatives,Prix,Surface,Date Decouverte,Status,Notes,Contacte,Resultat Contact,Prochaine Action\n')
 f.write('Michel Dupont,michel.dupont@email.fr,+33612345678,Erdeven,0,Maison,vendeur,85,Cadastre,,,2026-04-11,Nouveau,,Non,,A contacter\n')
 f.write('Francine Bernard,francine.b@email.fr,+33687654321,Erdeven,2,Villa,vendeur,88,Cadastre,,,2026-04-11,Nouveau,,Non,,A contacter\n')
@@ -30,26 +34,26 @@ f.write('Valerie Coste,valerie.coste@email.fr,+33698765432,Auray,16,Appartement,
 f.write('Actualites Immo,news@immobilier-bretagne.fr,+33200000000,Bretagne,25,News,info,60,Google News,,,2026-04-11,Nouveau,,Non,,A contacter\n')
 f.close()
 
-EMAIL_TO=os.environ.get('EMAIL_TO','Nessnet@gmail.com')
-EMAIL_SENDER=os.environ.get('EMAIL_SENDER','nessnet@gmail.com')
-EMAIL_PASSWORD=os.environ.get('EMAIL_PASSWORD')
+EMAIL_TO = os.environ.get('EMAIL_TO', 'Nessnet@gmail.com')
+EMAIL_SENDER = os.environ.get('EMAIL_SENDER', 'nessnet@gmail.com')
+EMAIL_PASSWORD = os.environ.get('EMAIL_PASSWORD')
 
-msg=MIMEMultipart()
-msg['From']=EMAIL_SENDER
-msg['To']=EMAIL_TO
-msg['Subject']='PROSPECTS ERDEVEN - 20 PROSPECTS'
-msg.attach(MIMEText('20 prospects\n\nA bientot\nPipeline Erdeven Bot','plain','utf-8'))
+msg = MIMEMultipart()
+msg['From'] = EMAIL_SENDER
+msg['To'] = EMAIL_TO
+msg['Subject'] = f'PROSPECTS ERDEVEN - {today}'
+msg.attach(MIMEText('20 prospects\n\nA bientot\nPipeline Erdeven Bot', 'plain', 'utf-8'))
 
-with open('/tmp/csv_hebdo/PROSPECTS_2026-04-11.csv','rb')as att:
-    part=MIMEBase('application','octet-stream')
+with open(csv_path, 'rb') as att:
+    part = MIMEBase('application', 'octet-stream')
     part.set_payload(att.read())
-    encode_base64(part)
-    part.add_header('Content-Disposition','attachment; filename=PROSPECTS_2026-04-11.csv')
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename=PROSPECTS_{today}.csv')
     msg.attach(part)
 
-srv=smtplib.SMTP('smtp.gmail.com',587)
+srv = smtplib.SMTP('smtp.gmail.com', 587)
 srv.starttls()
-srv.login(EMAIL_SENDER,EMAIL_PASSWORD)
-srv.sendmail(EMAIL_SENDER,[EMAIL_TO],msg.as_string())
+srv.login(EMAIL_SENDER, EMAIL_PASSWORD)
+srv.sendmail(EMAIL_SENDER, [EMAIL_TO], msg.as_string())
 srv.quit()
 print('OK')
